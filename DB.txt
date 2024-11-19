@@ -1,0 +1,224 @@
+<[1.]>
+
+CREATE DATABASE aparaty;
+CREATE USER '282210'@'localhost' IDENTIFIED BY 'Ryszkiewicz10';
+GRANT SELECT, INSERT, UPDATE ON aparaty.* TO '282210'@'localhost';
+
+<[2.]>
+
+CREATE TABLE Producent (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    nazwa VARCHAR(50) NOT NULL,
+    kraj VARCHAR(20) DEFAULT 'nieznany',
+    adresKorespondencyjny VARCHAR(100) DEFAULT 'nieznany'
+);
+
+CREATE TABLE Obiektyw (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    model VARCHAR(30),
+    minPrzeslona FLOAT CHECK (minPrzeslona >= 0),
+    maxPrzeslona FLOAT CHECK (maxPrzeslona > minPrzeslona)
+);
+
+CREATE TABLE Matryca (
+    ID INT PRIMARY KEY AUTO_INCREMENT,
+    przekatna DECIMAL(4,2) CHECK (przekatna >= 0),
+    rozdzielczosc DECIMAL(3,1) CHECK (rozdzielczosc >= 0),
+    typ VARCHAR(10)
+);
+ALTER TABLE Matryca AUTO_INCREMENT = 100;
+
+CREATE TABLE Aparat (
+    model VARCHAR(30) PRIMARY KEY,
+    producent INT,
+    matryca INT,
+    obiektyw INT,
+    waga FLOAT CHECK (waga >= 0),
+    typ ENUM('kompaktowy', 'lustrzanka', 'profesjonalny', 'inny'),
+    FOREIGN KEY (producent) REFERENCES Producent(ID),
+    FOREIGN KEY (matryca) REFERENCES Matryca(ID),
+    FOREIGN KEY (obiektyw) REFERENCES Obiektyw(ID)
+);
+
+<[3.]>
+
+INSERT INTO Producent (nazwa, kraj, adresKorespondencyjny) VALUES
+('Canon', 'Japonia', 'Tokyo, Japan'),
+('Sony', 'Japonia', 'Tokyo, Japan'),
+('Nikon', 'Japonia', 'Tokyo, Japan'),
+('Fujifilm', 'Japonia', 'Tokyo, Japan'),
+('Leica', 'Niemcy', 'Wetzlar, Germany'),
+('Xiaomi', 'Chiny', 'Beijing, China'),
+('Huawei', 'Chiny', 'Shenzhen, China'),
+('DJI', 'Chiny', 'Shenzhen, China'),
+('Oppo', 'Chiny', 'Dongguan, China'),
+('OnePlus', 'Chiny', 'Shenzhen, China'),
+('Samsung', 'Korea Południowa', 'Suwon, South Korea'),
+('Pentax', 'Japonia', 'Tokyo, Japan'),
+('Kodak', 'Stany Zjednoczone', 'Rochester, NY, USA'),
+('Olympus', 'Japonia', 'Tokyo, Japan'),
+('Panasonic', 'Japonia', 'Osaka, Japan');
+
+INSERT INTO Matryca (przekatna, rozdzielczosc, typ) VALUES
+(1.5, 24.3, 'CMOS'),
+(2.0, 20.1, 'CCD'),
+(1.8, 22.5, 'CMOS'),
+(1.6, 24.2, 'CMOS'),
+(1.2, 20.0, 'CCD'),
+(1.7, 25.4, 'CMOS'),
+(1.4, 24.1, 'CMOS'),
+(1.3, 21.0, 'CCD'),
+(2.1, 26.3, 'CMOS'),
+(1.9, 23.5, 'CMOS'),
+(1.1, 20.7, 'CCD'),
+(1.3, 21.3, 'CMOS'),
+(1.7, 22.9, 'CMOS'),
+(2.2, 27.8, 'CMOS'),
+(1.8, 23.0, 'CCD');
+
+INSERT INTO Obiektyw (model, minPrzeslona, maxPrzeslona) VALUES
+('Canon EF 50mm', 1.8, 22),
+('Sony FE 24-70mm', 2.8, 22),
+('Nikon AF-S 35mm', 1.4, 16),
+('Sigma 18-35mm', 1.8, 16),
+('Tamron 24-70mm', 2.8, 22),
+('Fujinon XF 23mm', 1.4, 16),
+('Zeiss Batis 25mm', 2.0, 22),
+('Leica Summilux 50mm', 1.4, 16),
+('Olympus M.Zuiko 12mm', 2.0, 16),
+('Pentax 31mm', 1.8, 16),
+('Canon EF 85mm', 1.2, 16),
+('Sony E 35mm', 1.8, 22),
+('Panasonic Lumix 25mm', 1.7, 16),
+('Voigtlander 21mm', 3.5, 22),
+('Samyang 35mm', 2.8, 16);
+
+INSERT INTO Aparat (model, producent, matryca, obiektyw, waga, typ) VALUES
+('Canon EOS R', 1, 100, 1, 660, 'lustrzanka'),
+('Sony A7 III', 2, 101, 2, 650, 'lustrzanka'),
+('Nikon D850', 3, 102, 3, 915, 'profesjonalny'),
+('Fujifilm X-T4', 4, 103, 4, 607, 'kompaktowy'),
+('Leica M10', 5, 104, 5, 660, 'kompaktowy'),
+('Xiaomi Mi Camera', 6, 105, 6, 700, 'inny'),
+('Huawei P40 Camera', 7, 106, 7, 630, 'kompaktowy'),
+('DJI Osmo Action', 8, 107, 8, 124, 'inny'),
+('Oppo Find Camera', 9, 108, 9, 155, 'kompaktowy'),
+('OnePlus Nord Camera', 10, 109, 10, 143, 'kompaktowy'),
+('Samsung NX1', 11, 110, 11, 550, 'lustrzanka'),
+('Pentax K-1', 12, 111, 12, 925, 'profesjonalny'),
+('Kodak Astro Zoom', 13, 112, 13, 900, 'inny'),
+('Olympus PEN', 14, 113, 14, 300, 'kompaktowy'),
+('Panasonic Lumix', 15, 114, 15, 680, 'profesjonalny');
+
+//błąd
+INSERT INTO Aparat (model, producent, matryca, obiektyw, waga, typ) VALUES ('TestModel', 1, 100, 1, -500, 'inny');
+
+<[4.]>
+
+//pytanie
+tak, bo ma uprawnienia do INSERT
+Nie, nie powtarza się bo CONCAT Model + i
+
+DELIMITER //
+CREATE PROCEDURE GenerateAparats()
+BEGIN
+   DECLARE i INT DEFAULT 1;
+   WHILE i <= 100 DO
+      INSERT INTO Aparat (model, producent, matryca, obiektyw, waga, typ)
+      VALUES (CONCAT('Model', i), RAND() % 5 + 1, RAND() % 5 + 100, RAND() % 5 + 1, RAND(), 'lustrzanka');
+      SET i = i + 1;
+   END WHILE;
+END //
+DELIMITER ;
+
+<[5.]>
+
+CREATE FUNCTION NajmniejszaMatryca(producentID INT) RETURNS VARCHAR(30)
+BEGIN
+   RETURN (SELECT model FROM Aparat JOIN Matryca ON Aparat.matryca = Matryca.ID
+           WHERE producent = producentID ORDER BY przekatna ASC LIMIT 1);
+END;
+
+<[6.]>
+
+CREATE TRIGGER InsertProducentBeforeAparat
+BEFORE INSERT ON Aparat
+FOR EACH ROW
+BEGIN
+   IF NOT EXISTS (SELECT 1 FROM Producent WHERE ID = NEW.producent) THEN //jeśli nie ma jeszcze tego producenta
+      INSERT INTO Producent (ID, nazwa) VALUES (NEW.producent, 'Nowy Producent');
+   END IF;
+END;
+
+<[7.]>
+
+CREATE FUNCTION LiczbaModeli(matrycaID INT) RETURNS INT
+BEGIN
+   RETURN (SELECT COUNT(*) FROM Aparat WHERE matryca = matrycaID);
+END;
+
+<[8.]>
+
+CREATE TRIGGER DeleteMatrycaAfterAparatDelete
+AFTER DELETE ON Aparat
+FOR EACH ROW
+BEGIN
+   IF NOT EXISTS (SELECT 1 FROM Aparat WHERE matryca = OLD.matryca) THEN
+      DELETE FROM Matryca WHERE ID = OLD.matryca; //old czyli przed usunięciem jeszcze
+   END IF;
+END;
+
+<[9.]>
+
+//pytanie
+nie bo nie nadałem mu uprawnienć CREATE VIEW
+
+CREATE VIEW AparatyLustrzanka AS
+SELECT Aparat.model, Aparat.waga, Producent.nazwa, Matryca.przekatna, Matryca.rozdzielczosc, Obiektyw.minPrzeslona, Obiektyw.maxPrzeslona
+FROM Aparat
+JOIN Producent ON Aparat.producent = Producent.ID
+JOIN Matryca ON Aparat.matryca = Matryca.ID
+JOIN Obiektyw ON Aparat.obiektyw = Obiektyw.ID
+WHERE Aparat.typ = 'lustrzanka' AND Producent.kraj != 'Chiny';
+
+<[10.]>
+
+//pytanie
+tak, widok jest dynamiczny, nie będzie już widać chińskich aparatów
+
+CREATE VIEW ProducentAparaty AS
+SELECT Producent.nazwa, Producent.kraj, Aparat.model
+FROM Aparat
+JOIN Producent ON Aparat.producent = Producent.ID;
+
+DELETE FROM Aparat WHERE producent IN (SELECT ID FROM Producent WHERE kraj = 'Chiny');
+
+<[11.]>
+
+//pytanie
+nie, nie utworzy triggera
+tak trigger będzie działał
+
+ALTER TABLE Producent ADD COLUMN liczbaModeli INT NOT NULL DEFAULT 0;
+UPDATE Producent SET liczbaModeli = (SELECT COUNT(*) FROM Aparat WHERE Aparat.producent = Producent.ID);
+
+CREATE TRIGGER UpdateLiczbaModeli
+AFTER INSERT OR DELETE OR UPDATE ON Aparat
+FOR EACH ROW
+BEGIN							//jeśli coś usunęliśmy to -1 jeśli dodaliśmy to +1
+   IF OLD.producent IS NOT NULL THEN 
+      UPDATE Producent SET liczbaModeli = liczbaModeli - 1 WHERE ID = OLD.producent;
+   END IF;
+   IF NEW.producent IS NOT NULL THEN
+      UPDATE Producent SET liczbaModeli = liczbaModeli + 1 WHERE ID = NEW.producent;
+   END IF;
+END;
+
+
+Jan Ryszkiewicz
+
+
+
+
+
+
