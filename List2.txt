@@ -133,14 +133,19 @@ DELIMITER ;
 
 <[5.]>
 
+DELIMITER //
 CREATE FUNCTION NajmniejszaMatryca(producentID INT) RETURNS VARCHAR(30)
 BEGIN
    RETURN (SELECT model FROM Aparat JOIN Matryca ON Aparat.matryca = Matryca.ID
            WHERE producent = producentID ORDER BY przekatna ASC LIMIT 1);
 END;
+//
+
+DELIMITER ;
 
 <[6.]>
 
+DELIMITER //
 CREATE TRIGGER InsertProducentBeforeAparat
 BEFORE INSERT ON Aparat
 FOR EACH ROW
@@ -149,16 +154,24 @@ BEGIN
       INSERT INTO Producent (ID, nazwa) VALUES (NEW.producent, 'Nowy Producent');
    END IF;
 END;
+//
+
+DELIMITER ;
 
 <[7.]>
 
+DELIMITER //
 CREATE FUNCTION LiczbaModeli(matrycaID INT) RETURNS INT
 BEGIN
    RETURN (SELECT COUNT(*) FROM Aparat WHERE matryca = matrycaID);
 END;
+//
+
+DELIMITER ;
 
 <[8.]>
 
+DELIMITER //
 CREATE TRIGGER DeleteMatrycaAfterAparatDelete
 AFTER DELETE ON Aparat
 FOR EACH ROW
@@ -167,6 +180,9 @@ BEGIN
       DELETE FROM Matryca WHERE ID = OLD.matryca; //old czyli przed usunięciem jeszcze
    END IF;
 END;
+//
+
+DELIMITER ;
 
 <[9.]>
 
@@ -202,23 +218,60 @@ tak trigger będzie działał
 ALTER TABLE Producent ADD COLUMN liczbaModeli INT NOT NULL DEFAULT 0;
 UPDATE Producent SET liczbaModeli = (SELECT COUNT(*) FROM Aparat WHERE Aparat.producent = Producent.ID);
 
-CREATE TRIGGER UpdateLiczbaModeli
-AFTER INSERT OR DELETE OR UPDATE ON Aparat
+DELIMITER //
+
+CREATE TRIGGER UpdateLiczbaModeliAfterInsert
+AFTER INSERT ON Aparat
 FOR EACH ROW
-BEGIN							//jeśli coś usunęliśmy to -1 jeśli dodaliśmy to +1
-   IF OLD.producent IS NOT NULL THEN 
-      UPDATE Producent SET liczbaModeli = liczbaModeli - 1 WHERE ID = OLD.producent;
-   END IF;
+BEGIN
    IF NEW.producent IS NOT NULL THEN
-      UPDATE Producent SET liczbaModeli = liczbaModeli + 1 WHERE ID = NEW.producent;
+      UPDATE Producent 
+      SET liczbaModeli = liczbaModeli + 1 
+      WHERE ID = NEW.producent;
    END IF;
 END;
+//
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER UpdateLiczbaModeliAfterDelete
+AFTER DELETE ON Aparat
+FOR EACH ROW
+BEGIN
+   IF OLD.producent IS NOT NULL THEN
+      UPDATE Producent 
+      SET liczbaModeli = liczbaModeli - 1 
+      WHERE ID = OLD.producent;
+   END IF;
+END;
+//
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE TRIGGER UpdateLiczbaModeliAfterUpdate
+AFTER UPDATE ON Aparat
+FOR EACH ROW
+BEGIN
+   IF OLD.producent IS NOT NULL THEN
+      UPDATE Producent 
+      SET liczbaModeli = liczbaModeli - 1 
+      WHERE ID = OLD.producent;
+   END IF;
+   IF NEW.producent IS NOT NULL THEN
+      UPDATE Producent 
+      SET liczbaModeli = liczbaModeli + 1 
+      WHERE ID = NEW.producent;
+   END IF;
+END;
+//
+
+DELIMITER ;
+
 
 
 Jan Ryszkiewicz
-
-
-
-
-
-
