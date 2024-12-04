@@ -5,17 +5,32 @@ CREATE DATABASE PracownicyDB;
 USE PracownicyDB;
 
 -- Tabela Ludzie
-CREATE TABLE Ludzie 
+CREATE TABLE Ludzie
 (
     PESEL CHAR(11) PRIMARY KEY,
     imie VARCHAR(30) NOT NULL,
     nazwisko VARCHAR(30) NOT NULL,
     data_urodzenia DATE NOT NULL,
     plec ENUM('K', 'M') NOT NULL,
-    CONSTRAINT chk_pesel CHECK 
+    CONSTRAINT check_pesel CHECK
     (
-        LENGTH(PESEL) = 11 AND
-        PESEL REGEXP '^[0-9]+$'
+        PESEL REGEXP '^[0-9]+$' AND
+        (
+            (SUBSTR(CAST(YEAR(data_urodzenia) AS CHAR), 1, 2) = '19' AND
+            CAST(SUBSTR(PESEL, 3, 2) AS INT) = MONTH(data_urodzenia))
+            OR
+            (SUBSTR(CAST(YEAR(data_urodzenia) AS CHAR), 1, 2) = '20' AND
+            CAST(SUBSTR(PESEL, 3, 2) AS INT) = 20 + MONTH(data_urodzenia))
+        ) AND
+        SUBSTR(CAST(YEAR(data_urodzenia) AS CHAR), 3, 2) = SUBSTR(PESEL, 1, 2) AND
+        DAY(data_urodzenia) = CAST(SUBSTR(PESEL, 5, 2) AS INT) AND
+        (
+            (CAST(SUBSTR(PESEL, 10, 1) AS INT) % 2 = 0 AND
+            plec = 'K')
+            OR
+            (CAST(SUBSTR(PESEL, 10, 1) AS INT) % 2 = 1 AND
+            plec = 'M')
+        )
     )
 );
 
@@ -34,7 +49,6 @@ CREATE TABLE Pracownicy
     PESEL CHAR(11),
     zawod_id INT,
     pensja FLOAT NOT NULL CHECK (pensja >= 0),
-    PRIMARY KEY (PESEL, zawod_id),
     FOREIGN KEY (PESEL) REFERENCES Ludzie(PESEL),
     FOREIGN KEY (zawod_id) REFERENCES Zawody(zawod_id)
 );
@@ -129,71 +143,60 @@ VALUES
 
 DELIMITER ##
 
-CREATE OR REPLACE PROCEDURE Przypisz_Zawody()
+CREATE OR REPLACE PROCEDURE Przypisz_zawody()
 BEGIN
-    -- Deklaracje zmiennych dla kursora
-    DECLARE done INT DEFAULT FALSE;
-    DECLARE person_id INT;
-    DECLARE person_birth_date DATE;
-    DECLARE person_gender ENUM('K', 'M');
-    DECLARE person_age INT;
-    DECLARE chosen_zawod_id INT;
+    DECLARE done BOOLEAN DEFAULT FALSE;
+
+    DECLARE ludz_PESEL CHAR(11);
+    DECLARE ludz_data_urodzenia DATE;
+    DECLARE ludz_plec ENUM('K', 'M');
+    DECLARE ludz_wiek INT;
+    DECLARE ludz_zawod_id INT;
+    DECLARE ludz_pensja FLOAT;
+
     DECLARE pensja_minimalna FLOAT;
     DECLARE pensja_maxymalna FLOAT;
-    DECLARE random_pensja FLOAT;
 
-    -- Kursor do przechodzenia przez tabelę `Ludzie`
     DECLARE ludzie_cursor CURSOR FOR
-        SELECT id, data_urodzenia, plec
+        (SELECT PESEL, data_urodzenia, plec
         FROM Ludzie
-        WHERE DATEDIFF(CURDATE(), data_urodzenia) / 365.25 >= 18; -- Tylko osoby pełnoletnie
+        WHERE DATEDIFF(CURDATE(), data_urodzenia) / 365.25 >= 18);
 
-    -- Handler dla końca kursora
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
 
-    -- Otwórz kursor
     OPEN ludzie_cursor;
-
-    ludzie_loop: LOOP
-        -- Pobierz dane osoby z kursora
-        FETCH ludzie_cursor INTO person_id, person_birth_date, person_gender;
-
-        -- Sprawdź, czy koniec danych
+   
+    ludzie: LOOP
+        FETCH ludzie_cursor INTO ludz_PESEL, ludz_data_urodzenia, ludz_plec;
         IF done THEN
-            LEAVE ludzie_loop;
+            LEAVE ludzie;
         END IF;
 
-        -- Oblicz wiek osoby
-        SET person_age = FLOOR(DATEDIFF(CURDATE(), person_birth_date) / 365.25);
-
-        -- Wybierz losowy zawód
-        REPEAT
+        SET ludz_wiek = DATEDIFF(CURDATE(), ludz_data_urodzenia) / 365.25;
+       
+        IF ((ludz_plec = 'M' AND ludz_wiek > 65) OR (ludz_plec = 'K' AND ludz_wiek > 60)) THEN
             SELECT zawod_id, pensja_min, pensja_max
-            INTO chosen_zawod_id, pensja_minimalna, pensja_maxymalna
-            FROM Zawody
-            ORDER BY RAND()
-            LIMIT 1;
+                INTO ludz_zawod_id, pensja_minimalna, pensja_maxymalna
+                FROM Zawody
+                WHERE nazwa != "Lekarz"
+                ORDER BY RAND()
+                LIMIT 1;
+        ELSE
+            SELECT zawod_id, pensja_min, pensja_max
+                INTO ludz_zawod_id, pensja_minimalna, pensja_maxymalna
+                FROM Zawody
+                ORDER BY RAND()
+                LIMIT 1;
+        END IF;
 
-            -- Jeśli zawód to lekarz, sprawdź dodatkowe warunki wiekowe
-            IF (chosen_zawod_id = (SELECT zawod_id FROM Zawody WHERE nazwa = 'Lekarz')) THEN
-                IF (person_gender = 'M' AND person_age > 65) OR (person_gender = 'K' AND person_age > 60) THEN
-                    -- Jeśli warunki wiekowe dla lekarza nie są spełnione, wybierz inny zawód
-                    SET chosen_zawod_id = NULL;
-                END IF;
-            END IF;
-        UNTIL chosen_zawod_id IS NOT NULL END REPEAT;
-
-        -- Wylosuj pensję w widełkach dla danego zawodu
-        SET random_pensja = pensja_minimalna + RAND() * (pensja_maxymalna - pensja_minimalna);
-
-        -- Wstaw dane do tabeli `Pracownicy`
-        INSERT INTO Pracownicy (id_pracownika, zawod_id, pensja)
-        VALUES (person_id, chosen_zawod_id, random_pensja);
-
+        SET ludz_pensja = pensja_minimalna + RAND() * (pensja_maxymalna - pensja_minimalna);
+       
+        INSERT INTO Pracownicy (PESEL, zawod_id, pensja)
+        VALUES (ludz_PESEL, ludz_zawod_id, ludz_pensja);
     END LOOP;
 
-    -- Zamknij kursor
     CLOSE ludzie_cursor;
+
 END ##
 
 DELIMITER ;
