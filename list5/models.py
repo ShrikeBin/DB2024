@@ -1,10 +1,16 @@
-from sqlalchemy import Table, Column, Integer, String, ForeignKey, Date, Text, DateTime
+from sqlalchemy import Table, Column, Integer, String, ForeignKey, Date, Text, DateTime, Enum
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
+import enum
 
 Base = declarative_base()
 
 # Define your models first
+
+class UserRole(enum.Enum):
+    ADMIN = "admin"
+    LIBRARIAN = "librarian"
+
 class User(Base):
     __tablename__ = 'users'
 
@@ -12,10 +18,13 @@ class User(Base):
     username = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=True)
+    role = Column(Enum(UserRole), nullable=False, default=UserRole.LIBRARIAN)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
     borrowings = relationship('Borrowing', back_populates='user')
     ratings = relationship('Rating', back_populates='user')
+
 
 
 class Author(Base):
