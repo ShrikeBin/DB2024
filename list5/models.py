@@ -26,7 +26,6 @@ class User(Base):
     ratings = relationship('Rating', back_populates='user')
 
 
-
 class Author(Base):
     __tablename__ = 'authors'
 

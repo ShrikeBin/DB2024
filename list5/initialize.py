@@ -92,8 +92,6 @@ def enter_table(table, root, current_user):
     scrollbar_x = tk.Scrollbar(frame_data_display, orient=tk.HORIZONTAL)
     scrollbar_x.pack(side=tk.BOTTOM, fill=tk.X)
 
-    # LISTBOX_DATA 
-    
     listbox_data = tk.Listbox(frame_data_display, yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set, width=100, height=30)
     listbox_data.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
