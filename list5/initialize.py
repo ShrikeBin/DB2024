@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox, simpledialog, ttk
 from tkcalendar import DateEntry
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -48,58 +48,78 @@ def login(login_window, entry_login_username, entry_login_password): #????
 def enter_table(table, root, current_user):
     # Close the previous window
     root.destroy()
-    
+
     # Create a new window
     table_window = tk.Tk()
     table_window.title(f"Table: {table.capitalize()}")
-    table_window.geometry("800x600")
+    table_window.geometry("1000x600")  # Increased width for separate sections
 
     # Function to go back to the main window
     def go_back():
         table_window.destroy()
-        open_main_app(current_user)  # Reopen the main window
+        open_main_app(current_user)
 
-    # Frame for filtering options
-    frame_filter = tk.Frame(table_window)
-    frame_filter.pack(fill=tk.X, padx=10, pady=5)
+    # Main frame to hold filter and checkbox sections
+    main_frame = tk.Frame(table_window)
+    main_frame.pack(fill=tk.BOTH, expand=True)
 
-    tk.Label(frame_filter, text="Filtr:").pack(side=tk.LEFT, padx=5)
+    # Frame for filtering options (left side)
+    frame_filter = tk.Frame(main_frame)
+    frame_filter.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=5)
 
+    tk.Label(frame_filter, text="Filtr:").pack(anchor="w", padx=5)
+
+    # Get model columns dynamically
+    model = table_models.get(table)
+    if not model:
+        messagebox.showwarning("Error", "Model not found.")
+        return
+    
+    model_columns = [column.name for column in model.__table__.columns]
+
+    # Dropdown filter (Combobox) for columns
+    filter_var = tk.StringVar()
+    filter_dropdown = ttk.Combobox(frame_filter, textvariable=filter_var, values=model_columns, state="readonly")
+    filter_dropdown.current(0)
+    filter_dropdown.pack(anchor="w", padx=5, pady=2)
+
+    # Entry for filter pattern with wildcards
     filter_entry = tk.Entry(frame_filter)
-    filter_entry.pack(side=tk.LEFT, padx=5)
+    filter_entry.pack(anchor="w", padx=5, pady=2)
 
     def apply_filter():
+        selected_filter = filter_var.get()
         filter_value = filter_entry.get()
-        model = table_models.get(table)
-
-        if not model:
-            messagebox.showwarning("Error", "Model not found.")
-            return
-
-        # Create a base query
         query = session.query(model)
+        if hasattr(model, selected_filter) and filter_value:
+            query = query.filter(getattr(model, selected_filter).like(f"%{filter_value}%"))
+        rows = query.all()
+        selected_columns = [col for col, var in column_visibility.items() if var.get()]
+        show_table_data(model, rows, listbox_data, session, selected_columns)
 
-        # Apply filters based on which columns exist in the model
-        filters = []
-        if filter_value:
-            if hasattr(model, 'title'):  # Assuming 'title' exists for Book or similar models
-                filters.append(model.title.like(f"%{filter_value}%"))
-            if hasattr(model, 'username'):  # Assuming 'username' exists for User model
-                filters.append(model.username.like(f"%{filter_value}%"))
-            # Add more conditions based on the available columns (e.g., 'author', 'category', etc.)
+    tk.Button(frame_filter, text="Filtruj", command=apply_filter).pack(anchor="w", padx=5, pady=5)
+    tk.Button(frame_filter, text="Wróc", command=go_back).pack(anchor="w", padx=5, pady=5)
 
-        if filters:
-            query = query.filter(*filters)
+    # Frame for checkbuttons (right side)
+    frame_checkbuttons = tk.Frame(main_frame, relief=tk.GROOVE, bd=2)
+    frame_checkbuttons.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=5)
 
-        rows = query.all()  # Execute the query
-        show_table_data(model, rows, listbox_data, session)
+    tk.Label(frame_checkbuttons, text="Pokaż kolumny:").pack(anchor="w", padx=5, pady=2)
 
+    # Checkbuttons to toggle column visibility
+    column_visibility = {col: tk.BooleanVar(value=True) for col in model_columns}
 
-    tk.Button(frame_filter, text="Filtruj", command=apply_filter).pack(side=tk.LEFT, padx=5)
-    tk.Button(frame_filter, text="Wróc", command=go_back).pack(side=tk.RIGHT, padx=5)
+    def toggle_columns():
+        selected_columns = [col for col, var in column_visibility.items() if var.get()]
+        rows = session.query(model).all()
+        show_table_data(model, rows, listbox_data, session, selected_columns)
 
-    # Frame for data display with scrollbars
-    frame_data_display = tk.Frame(table_window)
+    for col in model_columns:
+        chk = ttk.Checkbutton(frame_checkbuttons, text=col, variable=column_visibility[col], command=toggle_columns)
+        chk.pack(anchor="w", padx=5)
+
+    # Frame for data display (center)
+    frame_data_display = tk.Frame(main_frame)
     frame_data_display.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     scrollbar_y = tk.Scrollbar(frame_data_display, orient=tk.VERTICAL)
@@ -115,12 +135,11 @@ def enter_table(table, root, current_user):
     scrollbar_x.config(command=listbox_data.xview)
 
     # Load initial data
-    model = table_models.get(table)
-    if model:
-        rows = session.query(model).all()
-        show_table_data(model, rows, listbox_data, session)
+    rows = session.query(model).all()
+    show_table_data(model, rows, listbox_data, session, model_columns)
 
     table_window.mainloop()
+
 
 # Open main application
 def open_main_app(current_user):

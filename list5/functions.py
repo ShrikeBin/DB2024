@@ -215,12 +215,11 @@ def refresh_user_list(listbox_users, session):
     for user in users:
         listbox_users.insert(tk.END, f"{user.id} - {user.username}")
         
-def show_table_data(model, rows, listbox_data, session):
-# Wyczyść listbox przed dodaniem nowych danych
+def show_table_data(model, rows, listbox_data, session, selected_columns):
+    # Clear the listbox before adding new data
     listbox_data.delete(0, tk.END)
 
-    # Wstaw dane do listboxa
+    # Insert data into the listbox based on selected columns
     for row in rows:
-        # Sprawdzamy, które kolumny należy wyświetlić
-        row_data = ", ".join([f"{column.name}: {getattr(row, column.name)}" for column in model.__table__.columns])
-        listbox_data.insert(tk.END, row_data)        
+        row_data = ", ".join([f"{col}: {getattr(row, col)}" for col in selected_columns])
+        listbox_data.insert(tk.END, row_data)
