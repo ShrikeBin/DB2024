@@ -2,6 +2,7 @@
 ```bash 
 pip install sqlalchemy
 pip install bcrypt
+pip install tkcalendar
 sudo apt install python3-tk
 ```
 
@@ -28,7 +29,6 @@ sudo apt install python3-tk
 - **author_id** (Integer) - Foreign key to the `Author` table, not nullable.
 - **published_date** (Date) - Nullable.
 - **isbn** (String) - Unique, nullable.
-- **genre** (String) - Nullable.
 - **available_copies** (Integer) - Not nullable, default is `1`.
 
 #### Borrowing

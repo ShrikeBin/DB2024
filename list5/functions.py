@@ -99,6 +99,115 @@ def delete_user(current_user, listbox_users, session):
     except:
         session.rollback()
         messagebox.showwarning("Error", "Error deleting user.")
+        
+def add_author(entry_author_name, session):
+    author_name = entry_author_name.get()
+    
+    if not author_name:
+        messagebox.showwarning("Error", "Author name must be filled!")
+        return
+    
+    new_author = Author(name=author_name)
+    
+    try:
+        session.add(new_author)
+        session.commit()
+        messagebox.showinfo("Success", "Author added.")
+    except IntegrityError:
+        session.rollback()
+        messagebox.showwarning("Error", "Error adding author.")
+
+from datetime import datetime
+
+# Add Borrowing
+def add_borrowing(entry_borrowing_user, entry_borrowing_book, entry_borrowing_due_date, session):
+    user_id = entry_borrowing_user.get()
+    book_id = entry_borrowing_book.get()
+    due_date_str = entry_borrowing_due_date.get()  # This is a string in 'yyyy-mm-dd' format
+
+    # Convert due_date string to datetime object
+    try:
+        due_date = datetime.strptime(due_date_str, '%d-%m-%Y')  # Convert to datetime object
+    except ValueError:
+        messagebox.showwarning("Error", "Invalid date format.")
+        return
+
+    # Ensure that the user_id and book_id are integers
+    try:
+        user_id = int(user_id)
+        book_id = int(book_id)
+    except ValueError:
+        messagebox.showwarning("Error", "User ID and Book ID must be integers.")
+        return
+    
+    # Create a new Borrowing object
+    new_borrowing = Borrowing(user_id=user_id, book_id=book_id, due_date=due_date, returned_at=None)
+
+    try:
+        session.add(new_borrowing)
+        session.commit()
+        messagebox.showinfo("Success", "Borrowing added.")
+    except Exception as e:
+        session.rollback()
+        messagebox.showwarning("Error", f"Error adding borrowing: {str(e)}")
+
+
+def add_category(entry_category_name, session):
+    category_name = entry_category_name.get()
+    
+    if not category_name:
+        messagebox.showwarning("Error", "Category name must be filled!")
+        return
+    
+    new_category = Category(name=category_name)
+    
+    try:
+        session.add(new_category)
+        session.commit()
+        messagebox.showinfo("Success", "Category added.")
+    except IntegrityError:
+        session.rollback()
+        messagebox.showwarning("Error", "Error adding category.")
+
+def add_rating(entry_rating_user, entry_rating_book, entry_rating_value, entry_rating_review, session):
+    user_id = entry_rating_user.get()
+    book_id = entry_rating_book.get()
+    rating_value = entry_rating_value.get()
+    review = entry_rating_review.get()
+    
+    if not user_id or not book_id or not rating_value:
+        messagebox.showwarning("Error", "User ID, Book ID, and Rating are required!")
+        return
+    
+    try:
+        user_id = int(user_id)
+        book_id = int(book_id)
+        rating_value = int(rating_value)
+    except ValueError:
+        messagebox.showwarning("Error", "User ID, Book ID, and Rating must be integers!")
+        return
+
+    if rating_value < 1 or rating_value > 5:
+        messagebox.showwarning("Error", "Rating must be between 1 and 5!")
+        return
+    
+    user = session.query(User).filter_by(id=user_id).first()
+    book = session.query(Book).filter_by(id=book_id).first()
+    
+    if not user or not book:
+        messagebox.showwarning("Error", "User or Book not found!")
+        return
+
+    new_rating = Rating(user_id=user_id, book_id=book_id, value=rating_value, review=review)
+    
+    try:
+        session.add(new_rating)
+        session.commit()
+        messagebox.showinfo("Success", "Rating added.")
+    except IntegrityError:
+        session.rollback()
+        messagebox.showwarning("Error", "Error adding rating.")
+
 
 def refresh_user_list(listbox_users, session):
     listbox_users.delete(0, tk.END)

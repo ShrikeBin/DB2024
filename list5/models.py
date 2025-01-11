@@ -44,7 +44,6 @@ class Book(Base):
     author_id = Column(Integer, ForeignKey('authors.id'), nullable=False)
     published_date = Column(Date, nullable=True)
     isbn = Column(String, unique=True, nullable=True)
-    genre = Column(String, nullable=True)
     available_copies = Column(Integer, nullable=False, default=1)
     author = relationship('Author', back_populates='books')
     categories = relationship('Category', secondary='book_categories', back_populates='books')
