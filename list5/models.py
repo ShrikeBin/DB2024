@@ -2,8 +2,7 @@ from sqlalchemy import Table, Column, Integer, String, ForeignKey, Date, Text, D
 from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
 import enum
-
-Base = declarative_base()
+from db import Base
 
 # Define your models first
 
