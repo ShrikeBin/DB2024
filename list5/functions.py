@@ -198,7 +198,7 @@ def add_rating(entry_rating_user, entry_rating_book, entry_rating_value, entry_r
         messagebox.showwarning("Error", "User or Book not found!")
         return
 
-    new_rating = Rating(user_id=user_id, book_id=book_id, value=rating_value, review=review)
+    new_rating = Rating(user_id=user_id, book_id=book_id, rating=rating_value, review=review)
     
     try:
         session.add(new_rating)

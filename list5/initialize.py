@@ -32,7 +32,6 @@ if not session.query(User).first():
     session.commit()
 
 
-
 # Login Function
 def login(login_window, entry_login_username, entry_login_password): #????
     username = entry_login_username.get()
