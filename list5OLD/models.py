@@ -100,11 +100,11 @@ class Rating(Base):
     __tablename__ = 'ratings'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    reader_id = Column(Integer, ForeignKey('readers.id'), nullable=False)
     book_id = Column(Integer, ForeignKey('books.id'), nullable=False)
     rating = Column(Integer, nullable=False)
     review = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __initializable__ = ['user_id', 'book_id', 'rating', 'review']
+    __initializable__ = ['reader_id', 'book_id', 'rating', 'review']
     __editable__ = ['rating', 'review']
