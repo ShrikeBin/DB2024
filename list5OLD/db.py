@@ -32,8 +32,7 @@ with engine.connect() as connection:
                 WHERE title = NEW.title AND author_id = NEW.author_id AND id != NEW.id
                 LIMIT 1
             )
-            WHERE id = NEW.id
-            AND EXISTS (
+            WHERE EXISTS (
                 SELECT 1
                 FROM books
                 WHERE title = NEW.title AND author_id = NEW.author_id AND id != NEW.id
@@ -59,7 +58,16 @@ with engine.connect() as connection:
                             
             UPDATE books
             SET available_copies = available_copies - 1
-            WHERE id = NEW.book_id;
+            WHERE title = (
+                SELECT title
+                FROM books
+                WHERE id = NEW.book_id
+            )
+            AND author_id = (
+                SELECT author_id
+                FROM books
+                WHERE id = NEW.book_id
+            );
         END;
     """))
 
@@ -71,7 +79,16 @@ with engine.connect() as connection:
         BEGIN
             UPDATE books
             SET available_copies = available_copies + 1
-            WHERE id = NEW.book_id;
+            WHERE title = (
+                SELECT title
+                FROM books
+                WHERE id = NEW.book_id
+            )
+            AND author_id = (
+                SELECT author_id
+                FROM books
+                WHERE id = NEW.book_id
+            );
         END;
     """))
                             

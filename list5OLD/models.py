@@ -23,6 +23,17 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class Reader(Base):
+    __tablename__ = 'readers'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, unique=False, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+
+    __initializable__ = ['name', 'email']
+    __editable__ = ['email']
+
+
 class Author(Base):
     __tablename__ = 'authors'
 
@@ -53,13 +64,13 @@ class Borrowing(Base):
     __tablename__ = 'borrowings'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    reader_id = Column(Integer, ForeignKey('readers.id'), nullable=False)
     book_id = Column(Integer, ForeignKey('books.id'), nullable=False)
     borrowed_at = Column(DateTime, default=datetime.utcnow)
     due_date = Column(DateTime, nullable=False, default=lambda: datetime.utcnow() + timedelta(days=30))
     returned_at = Column(DateTime, nullable=True)
 
-    __initializable__ = ['user_id', 'book_id']
+    __initializable__ = ['reader_id', 'book_id']
     __editable__ = ['due_date', 'returned_at']
 
 
@@ -89,11 +100,11 @@ class Rating(Base):
     __tablename__ = 'ratings'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    reader_id = Column(Integer, ForeignKey('readers.id'), nullable=False)
     book_id = Column(Integer, ForeignKey('books.id'), nullable=False)
     rating = Column(Integer, nullable=False)
     review = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __initializable__ = ['user_id', 'book_id', 'rating', 'review']
+    __initializable__ = ['reader_id', 'book_id', 'rating', 'review']
     __editable__ = ['rating', 'review']
