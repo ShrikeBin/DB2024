@@ -40,30 +40,22 @@ def login(login_window, entry_login_username, entry_login_password): #????
     else:
         messagebox.showerror("Login Error", "Invalid username or password.")       
               
-import tkinter as tk
-from tkinter import messagebox, ttk
-
 def enter_table(table, root, current_user):
-    # Close the previous window
     root.destroy()
 
-    # Create a new window
     table_window = tk.Tk()
     table_window.title(f"Table: {table.capitalize()}")
     table_window.geometry("1000x600")
 
-    # Function to go back to the main window
     def go_back():
         table_window.destroy()
         open_main_app(current_user)
 
-    # Left frame for filter options
     frame_filter = tk.Frame(table_window)
     frame_filter.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=5)
 
     tk.Label(frame_filter, text="Filtr:").pack(anchor="w", padx=5)
 
-    # Get model columns dynamically
     model = table_models.get(table)
     if not model:
         messagebox.showwarning("Error", "Model not found.")
@@ -71,13 +63,11 @@ def enter_table(table, root, current_user):
     
     model_columns = [column.name for column in model.__table__.columns]
 
-    # Dropdown filter (Combobox) for columns
     filter_var = tk.StringVar()
     filter_dropdown = ttk.Combobox(frame_filter, textvariable=filter_var, values=model_columns, state="readonly")
     filter_dropdown.current(0)
     filter_dropdown.pack(anchor="w", padx=5, pady=2)
 
-    # Entry for filter pattern with wildcards
     filter_entry = tk.Entry(frame_filter)
     filter_entry.pack(anchor="w", padx=5, pady=2)
 
@@ -93,14 +83,13 @@ def enter_table(table, root, current_user):
 
     tk.Button(frame_filter, text="Filtruj", command=apply_filter).pack(anchor="w", padx=5, pady=2)
     tk.Button(frame_filter, text="(Dodaj Dane)", command=lambda: open_insert_window(table)).pack(anchor="w", padx=5, pady=2)
+    tk.Button(frame_filter, text="Usuń zaznaczone", command=lambda: delete_selected_record()).pack(anchor="w", padx=5, pady=2)
 
-    # Right frame for column visibility
     frame_columns = tk.Frame(table_window)
     frame_columns.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=5)
 
     tk.Label(frame_columns, text="Kolumny:").pack(anchor="w", padx=5)
     
-    # Checkbuttons to toggle column visibility
     column_visibility = {col: tk.BooleanVar(value=True) for col in model_columns}
     
     def toggle_columns():
@@ -114,7 +103,6 @@ def enter_table(table, root, current_user):
 
     tk.Button(frame_filter, text="Wróć", command=go_back).pack(anchor="w", padx=5, pady=20)
 
-    # Center frame for data display
     frame_data_display = tk.Frame(table_window)
     frame_data_display.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -130,9 +118,39 @@ def enter_table(table, root, current_user):
     scrollbar_y.config(command=listbox_data.yview)
     scrollbar_x.config(command=listbox_data.xview)
 
-    # Load initial data
+    row_id_mapping = {}
+
+    def show_table_data(model, rows, listbox, session, columns):
+        listbox.delete(0, tk.END)
+        row_id_mapping.clear()
+        for row in rows:
+            row_data = [str(getattr(row, col)) for col in columns]
+            display_text = " | ".join(row_data)
+            listbox.insert(tk.END, display_text)
+            row_id_mapping[display_text] = row.id
+
     rows = session.query(model).all()
     show_table_data(model, rows, listbox_data, session, model_columns)
+
+    def delete_selected_record():
+        selected_index = listbox_data.curselection()
+        if not selected_index:
+            messagebox.showwarning("Błąd", "Nie wybrano rekordu do usunięcia.")
+            return
+        selected_item = listbox_data.get(selected_index)
+        record_id = row_id_mapping.get(selected_item)
+        if not record_id:
+            messagebox.showwarning("Błąd", "Nie znaleziono ID rekordu.")
+            return
+        try:
+            record = session.get(model, int(record_id))
+            session.delete(record)
+            session.commit()
+            messagebox.showinfo("Sukces", "Rekord został usunięty.")
+            toggle_columns()
+        except Exception as e:
+            session.rollback()
+            messagebox.showerror("Błąd", f"Nie udało się usunąć rekordu:\n{e}")
 
     def open_insert_window(table):
         insert_window = tk.Toplevel(table_window)
@@ -150,12 +168,6 @@ def enter_table(table, root, current_user):
             var = tk.StringVar()
             entry_vars[col] = var
             tk.Entry(frame_input, textvariable=var).pack(anchor="w", padx=5, pady=2)
-        # if model == Book:
-        #     tk.Label(frame_input, text='Categories').pack(anchor="w", padx=5)
-        #     for col in session.query(Category.id).all():
-        #         var = tk.BooleanVar(value=False)
-        #         ttk.Checkbutton(frame_columns, text=col, variable=var, command=).pack(anchor="w", padx=5)
-
 
         def add_data():
             data_to_add = {col: var.get() for col, var in entry_vars.items() if var.get()}
@@ -166,15 +178,14 @@ def enter_table(table, root, current_user):
                 messagebox.showinfo("Sukces", "Dane zostały dodane.")
                 insert_window.destroy()
                 toggle_columns()
-            except Exception:
+            except Exception as e:
                 session.rollback()
-                messagebox.showerror("Błąd", f"Niepoprawne dane.")
+                messagebox.showerror("Błąd", f"Niepoprawne dane:\n{e}")
 
         tk.Button(frame_input, text="Dodaj", command=add_data).pack(anchor="w", padx=5, pady=10)
         tk.Button(frame_input, text="Zamknij", command=insert_window.destroy).pack(anchor="w", padx=5, pady=10)
 
         insert_window.mainloop()
-
 
 # Open main application
 def open_main_app(current_user):
