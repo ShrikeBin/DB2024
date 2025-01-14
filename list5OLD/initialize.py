@@ -4,7 +4,7 @@ from tkcalendar import DateEntry,Calendar
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
-from models import Base, User, Book, Author, Category, Borrowing, Rating, UserRole, BookCategory
+from models import Base, User, Book, Author, Category, Borrowing, Rating, UserRole, BookCategory, Reader
 from functions import show_table_data, add_user, edit_user, delete_user, add_book, refresh_user_list, add_author, add_borrowing, add_category, add_rating
 import bcrypt
 from db import session
@@ -17,7 +17,8 @@ table_models = {
     "borrowings": Borrowing,
     "ratings": Rating,
     "categories": Category,
-    "book_categories": BookCategory
+    "book_categories": BookCategory,
+    "readers": Reader
 }
 
 # Default admin creation
@@ -293,5 +294,8 @@ def open_main_app(current_user):
 
     button_categories = tk.Button(frame_main, text="Kategorie", command=lambda: enter_table("categories", root, current_user))
     button_categories.pack()
+
+    button_readers = tk.Button(frame_main, text="Czytelnicy", command=lambda: enter_table("readers", root, current_user))
+    button_readers.pack()
 
     root.mainloop()
