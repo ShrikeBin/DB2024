@@ -4,7 +4,7 @@ from tkcalendar import DateEntry,Calendar
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
-from models import Base, User, Book, Author, Category, Borrowing, Rating, UserRole
+from models import Base, User, Book, Author, Category, Borrowing, Rating, UserRole, BookCategory
 from functions import show_table_data, add_user, edit_user, delete_user, add_book, refresh_user_list, add_author, add_borrowing, add_category, add_rating
 import bcrypt
 from db import session
@@ -16,7 +16,8 @@ table_models = {
     "authors": Author,
     "borrowings": Borrowing,
     "ratings": Rating,
-    "categories": Category
+    "categories": Category,
+    "book_categories": BookCategory
 }
 
 # Default admin creation
@@ -138,7 +139,7 @@ def enter_table(table, root, current_user):
         insert_window.title(f"Dodaj dane do {table.capitalize()}")
         insert_window.geometry("400x500")
 
-        model_columns = [column.name for column in model.__table__.columns if column.name != 'id']
+        model_columns = model.__editable_columns__
 
         frame_input = tk.Frame(insert_window)
         frame_input.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -149,12 +150,15 @@ def enter_table(table, root, current_user):
             var = tk.StringVar()
             entry_vars[col] = var
             tk.Entry(frame_input, textvariable=var).pack(anchor="w", padx=5, pady=2)
+        # if model == Book:
+        #     tk.Label(frame_input, text='Categories').pack(anchor="w", padx=5)
+        #     for col in session.query(Category.id).all():
+        #         var = tk.BooleanVar(value=False)
+        #         ttk.Checkbutton(frame_columns, text=col, variable=var, command=).pack(anchor="w", padx=5)
+
 
         def add_data():
             data_to_add = {col: var.get() for col, var in entry_vars.items() if var.get()}
-            if not data_to_add:
-                messagebox.showwarning("Brak danych", "Uzupełnij dane, aby dodać rekord.")
-                return
             try:
                 new_record = model(**data_to_add)
                 session.add(new_record)
@@ -162,9 +166,9 @@ def enter_table(table, root, current_user):
                 messagebox.showinfo("Sukces", "Dane zostały dodane.")
                 insert_window.destroy()
                 toggle_columns()
-            except Exception as e:
+            except Exception:
                 session.rollback()
-                messagebox.showerror("Błąd", f"Nie udało się dodać danych: {e}")
+                messagebox.showerror("Błąd", f"Niepoprawne dane.")
 
         tk.Button(frame_input, text="Dodaj", command=add_data).pack(anchor="w", padx=5, pady=10)
         tk.Button(frame_input, text="Zamknij", command=insert_window.destroy).pack(anchor="w", padx=5, pady=10)

@@ -1,6 +1,6 @@
 from sqlalchemy import Table, Column, Integer, String, ForeignKey, Date, Text, DateTime, Enum
 from sqlalchemy.orm import relationship, declarative_base
-from datetime import datetime
+from datetime import datetime, timedelta
 import enum
 
 # Define your models first
@@ -21,9 +21,6 @@ class User(Base):
     role = Column(Enum(UserRole), nullable=False, default=UserRole.LIBRARIAN)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    borrowings = relationship('Borrowing', back_populates='user')
-    ratings = relationship('Rating', back_populates='user')
 
 
 class Author(Base):
@@ -33,7 +30,8 @@ class Author(Base):
     name = Column(String, unique=True, nullable=False)
     birth_date = Column(Date, nullable=True)
     biography = Column(Text, nullable=True)
-    books = relationship('Book', back_populates='author')
+
+    __editable_columns__ = ['name', 'birth_date', 'biography']
 
 
 class Book(Base):
@@ -45,10 +43,8 @@ class Book(Base):
     published_date = Column(Date, nullable=True)
     isbn = Column(String, unique=True, nullable=True)
     available_copies = Column(Integer, nullable=False, default=1)
-    author = relationship('Author', back_populates='books')
-    categories = relationship('Category', secondary='book_categories', back_populates='books')
-    borrowings = relationship('Borrowing', back_populates='book')
-    ratings = relationship('Rating', back_populates='book')
+
+    __editable_columns__ = ['title', 'author_id', 'published_date', 'isbn']
 
 
 class Borrowing(Base):
@@ -58,10 +54,10 @@ class Borrowing(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     book_id = Column(Integer, ForeignKey('books.id'), nullable=False)
     borrowed_at = Column(DateTime, default=datetime.utcnow)
-    due_date = Column(DateTime, nullable=False)
+    due_date = Column(DateTime, nullable=False, default=lambda: datetime.utcnow() + timedelta(days=30))
     returned_at = Column(DateTime, nullable=True)
-    user = relationship('User', back_populates='borrowings')
-    book = relationship('Book', back_populates='borrowings')
+
+    __editable_columns__ = ['user_id', 'book_id']
 
 
 class Category(Base):
@@ -70,15 +66,18 @@ class Category(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
     description = Column(Text, nullable=True)
-    books = relationship('Book', secondary='book_categories', back_populates='categories')
+
+    __editable_columns__ = ['name', 'description']
 
 
-# Now define the many-to-many association table after the classes
-book_categories = Table(
-    'book_categories', Base.metadata,
-    Column('book_id', Integer, ForeignKey('books.id'), primary_key=True),
-    Column('category_id', Integer, ForeignKey('categories.id'), primary_key=True)
-)
+class BookCategory(Base):
+    __tablename__ = 'book_categories'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey('books.id'), nullable=False)
+    category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
+
+    __editable_columns__ = ['book_id', 'category_id']
 
 
 class Rating(Base):
@@ -90,5 +89,5 @@ class Rating(Base):
     rating = Column(Integer, nullable=False)
     review = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    user = relationship('User', back_populates='ratings')
-    book = relationship('Book', back_populates='ratings')
+
+    __editable_columns__ = ['user_id', 'book_id', 'rating', 'review']
