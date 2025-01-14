@@ -31,7 +31,8 @@ class Author(Base):
     birth_date = Column(Date, nullable=True)
     biography = Column(Text, nullable=True)
 
-    __editable_columns__ = ['name', 'birth_date', 'biography']
+    __initializable__ = ['name', 'birth_date', 'biography']
+    __editable__ = __initializable__
 
 
 class Book(Base):
@@ -44,7 +45,8 @@ class Book(Base):
     isbn = Column(String, unique=True, nullable=True)
     available_copies = Column(Integer, nullable=False, default=1)
 
-    __editable_columns__ = ['title', 'author_id', 'published_date', 'isbn']
+    __initializable__ = ['title', 'author_id', 'published_date', 'isbn']
+    __editable__ = __initializable__
 
 
 class Borrowing(Base):
@@ -57,7 +59,8 @@ class Borrowing(Base):
     due_date = Column(DateTime, nullable=False, default=lambda: datetime.utcnow() + timedelta(days=30))
     returned_at = Column(DateTime, nullable=True)
 
-    __editable_columns__ = ['user_id', 'book_id']
+    __initializable__ = ['user_id', 'book_id']
+    __editable__ = ['due_date', 'returned_at']
 
 
 class Category(Base):
@@ -67,7 +70,8 @@ class Category(Base):
     name = Column(String, unique=True, nullable=False)
     description = Column(Text, nullable=True)
 
-    __editable_columns__ = ['name', 'description']
+    __initializable__ = ['name', 'description']
+    __editable__ = __initializable__
 
 
 class BookCategory(Base):
@@ -77,7 +81,8 @@ class BookCategory(Base):
     book_id = Column(Integer, ForeignKey('books.id'), nullable=False)
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
 
-    __editable_columns__ = ['book_id', 'category_id']
+    __initializable__ = ['book_id', 'category_id']
+    __editable__ = []
 
 
 class Rating(Base):
@@ -90,4 +95,5 @@ class Rating(Base):
     review = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __editable_columns__ = ['user_id', 'book_id', 'rating', 'review']
+    __initializable__ = ['user_id', 'book_id', 'rating', 'review']
+    __editable__ = ['rating', 'review']
