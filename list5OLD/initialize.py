@@ -84,6 +84,7 @@ def enter_table(table, root, current_user):
     tk.Button(frame_filter, text="Filtruj", command=apply_filter).pack(anchor="w", padx=5, pady=2)
     tk.Button(frame_filter, text="(Dodaj Dane)", command=lambda: open_insert_window(table)).pack(anchor="w", padx=5, pady=2)
     tk.Button(frame_filter, text="Usuń zaznaczone", command=lambda: delete_selected_record()).pack(anchor="w", padx=5, pady=2)
+    # tk.Button(frame_filter, text="(Edytuj Dane)", command=lambda: open_edit_window(table)
 
     frame_columns = tk.Frame(table_window)
     frame_columns.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=5)
@@ -157,7 +158,7 @@ def enter_table(table, root, current_user):
         insert_window.title(f"Dodaj dane do {table.capitalize()}")
         insert_window.geometry("400x500")
 
-        model_columns = model.__editable_columns__
+        model_columns = model.__initializable__
 
         frame_input = tk.Frame(insert_window)
         frame_input.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -168,6 +169,7 @@ def enter_table(table, root, current_user):
             var = tk.StringVar()
             entry_vars[col] = var
             tk.Entry(frame_input, textvariable=var).pack(anchor="w", padx=5, pady=2)
+
 
         def add_data():
             data_to_add = {col: var.get() for col, var in entry_vars.items() if var.get()}
@@ -186,6 +188,43 @@ def enter_table(table, root, current_user):
         tk.Button(frame_input, text="Zamknij", command=insert_window.destroy).pack(anchor="w", padx=5, pady=10)
 
         insert_window.mainloop()
+
+        
+    def open_edit_window(table, id):
+        edit_window = tk.Toplevel(table_window)
+        edit_window.title(f"Dodaj dane do {table.capitalize()}")
+        edit_window.geometry("400x500")
+
+        model_columns = model.__editable__
+
+        frame_input = tk.Frame(edit_window)
+        frame_input.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        entry_vars = {}
+        for col in model_columns:
+            tk.Label(frame_input, text=col.capitalize()).pack(anchor="w", padx=5)
+            var = tk.StringVar()
+            entry_vars[col] = var
+            tk.Entry(frame_input, textvariable=var).pack(anchor="w", padx=5, pady=2)
+
+        def edit_data():
+            object = session.query(model).filter(id=id).first()
+            try:
+                for col, var in entry_vars.items():
+                    object.col = var.get()
+                session.commit()
+                messagebox.showinfo("Sukces", "Dane zostały zedytowane.")
+                edit_window.destroy()
+                toggle_columns()
+            except Exception:
+                session.rollback()
+                messagebox.showerror("Błąd", f"Niepoprawne dane.")
+
+        tk.Button(frame_input, text="Potwierdz", command=edit_data).pack(anchor="w", padx=5, pady=10)
+        tk.Button(frame_input, text="Zamknij", command=edit_window.destroy).pack(anchor="w", padx=5, pady=10)
+
+        edit_window.mainloop()
+
 
 # Open main application
 def open_main_app(current_user):
