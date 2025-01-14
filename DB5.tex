@@ -17,7 +17,7 @@
 \maketitle
 
 \section{Cel aplikacji}
-Celem aplikacji jest stworzenie systemu zarządzania biblioteką umożliwiającego sprawne zarządzanie zasobami książkowymi, autorami, użytkownikami, kategoriami oraz ocenami. System pozwala na przechowywanie informacji o książkach, zarządzanie wypożyczeniami oraz ocenianie książek przez użytkowników.
+Celem aplikacji jest stworzenie systemu zarządzania biblioteką umożliwiającego sprawne zarządzanie zasobami książkowymi, autorami, użytkownikami, kategoriami, czytelnikami oraz ocenami. System pozwala na przechowywanie informacji o książkach, zarządzanie wypożyczeniami oraz ocenianie książek przez czytelników.
 
 \section*{Charakterystyka użytkowników}
 \begin{itemize}
@@ -46,15 +46,17 @@ Celem aplikacji jest stworzenie systemu zarządzania biblioteką umożliwiające
     \item \textbf{Books} (id, title, author\_id, published\_date, isbn, available\_copies)
     \item \textbf{Borrowings} (id, user\_id, book\_id, borrowed\_at, due\_date, returned\_at)
     \item \textbf{Categories} (id, name, description)
-    \item \textbf{Ratings} (id, user\_id, book\_id, rating, review, created\_at)
+    \item \textbf{Ratings} (id, reader\_id, book\_id, rating, review, created\_at)
+    \item \textbf{BookCategories} (id, book\_id, category\_id)
+    \item \textbf{Readers} (id, name, email)
 \end{itemize}
 
 \subsection*{Triggery}
 \begin{itemize}
-    \item \textbf{new\_copy} - zwieksza liczbe dostepnych kopii ksiazki o podanym tytule i autorze
-    \item \textbf{borrowed\_book\_nonavailable} - zmniejsza liczbe dostepnych kopii pozyczonej ksiazki, pilnuje aby nie mozna bylo wypozyczyc niedostepnej ksiazki
-    \item \textbf{returned\_book\_available} - analogicznie, dla oddanej ksiazki
-    \item \textbf{prevent\_borrowed\_book\_deletion} - pilnuje, aby nie mozna bylo usunac wypozyczonej ksiazki
+    \item \textbf{new\_copy} - zwiększa liczbę dostępnych kopii ksiązki o podanym tytule i autorze
+    \item \textbf{borrowed\_book\_nonavailable} - zmniejsza liczbę dostępnych kopii pożyczonej książki, pilnuje aby nie można było wypożyczyć niedostępnej książki
+    \item \textbf{returned\_book\_available} - analogicznie, dla oddanej książki
+    \item \textbf{prevent\_borrowed\_book\_deletion} - pilnuje, aby nie można bylo usunąć wypożyczonej książki
 \end{itemize}
 
 \subsection*{Diagram ER}
@@ -100,7 +102,19 @@ Wszystkie tabele zostały znormalizowane do 3NF, co zapewnia brak redundancji i 
 \subsection*{Ratings}
 \begin{itemize}
     \item Klucz główny: \texttt{id}
-    \item Klucze obce: \texttt{user\_id} \(\rightarrow\) \texttt{users(id)}, \texttt{book\_id} \(\rightarrow\) \texttt{books(id)}
+    \item Klucze obce: \texttt{reader\_id} \(\rightarrow\) \texttt{readers(id)}, \texttt{book\_id} \(\rightarrow\) \texttt{books(id)}
+\end{itemize}
+
+\subsection*{BookCategories}
+\begin{itemize}
+    \item Klucz główny: \texttt{id}
+    \item Klucze obce: \texttt{category\_id} \(\rightarrow\) \texttt{categories(id)}, \texttt{book\_id} \(\rightarrow\) \texttt{books(id)}
+\end{itemize}
+
+\subsection*{Readers}
+\begin{itemize}
+    \item Klucz główny: \texttt{id}
+    \item Klucz kandydacki: \texttt{email}
 \end{itemize}
 
 \section*{Prawa dostępu}
@@ -116,4 +130,3 @@ Bibliotekarz & Zarządzanie książkami, autorami, kategoriami, wypożyczeniami 
 
 
 \end{document}
-
