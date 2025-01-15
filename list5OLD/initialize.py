@@ -2,8 +2,8 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 from tkcalendar import DateEntry,Calendar
 from datetime import datetime, date
-from sqlalchemy import Date
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import inspect
+from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from models import Base, User, Book, Author, Category, Borrowing, Rating, UserRole, BookCategory, Reader
 from functions import show_table_data, add_user, edit_user, delete_user, add_book, refresh_user_list, add_author, add_borrowing, add_category, add_rating
@@ -64,6 +64,7 @@ def enter_table(table, root, current_user):
         return
     
     model_columns = [column.name for column in model.__table__.columns]
+    model_rels = [rel_name for rel_name in inspect(model).relationships.keys()]
 
     filter_var = tk.StringVar()
     filter_dropdown = ttk.Combobox(frame_filter, textvariable=filter_var, values=model_columns, state="readonly")
@@ -94,14 +95,19 @@ def enter_table(table, root, current_user):
     tk.Label(frame_columns, text="Kolumny:").pack(anchor="w", padx=5)
     
     column_visibility = {col: tk.BooleanVar(value=True) for col in model_columns}
+    rel_visibility = {col: tk.BooleanVar(value=True) for col in model_rels}
     
     def toggle_columns():
         selected_columns = [col for col, var in column_visibility.items() if var.get()]
+        selected_rels = [rel for rel, var in rel_visibility.items() if var.get()]
         rows = session.query(model).all()
-        show_table_data(model, rows, listbox_data, session, selected_columns)
+        show_table_data(model, rows, listbox_data, session, selected_columns, selected_rels)
     
     for col in model_columns:
         chk = ttk.Checkbutton(frame_columns, text=col, variable=column_visibility[col], command=toggle_columns)
+        chk.pack(anchor="w", padx=5)
+    for rel in model_rels:
+        chk = ttk.Checkbutton(frame_columns, text=rel, variable=rel_visibility[rel], command=toggle_columns)
         chk.pack(anchor="w", padx=5)
 
     tk.Button(frame_filter, text="Wróć", command=go_back).pack(anchor="w", padx=5, pady=20)
@@ -123,17 +129,17 @@ def enter_table(table, root, current_user):
 
     row_id_mapping = {}
 
-    def show_table_data(model, rows, listbox, session, columns):
+    def show_table_data(model, rows, listbox, session, columns, rels):
         listbox.delete(0, tk.END)
         row_id_mapping.clear()
         for row in rows:
-            row_data = [str(getattr(row, col)) for col in columns]
+            row_data = [str(getattr(row, col)) for col in columns] + ["(" + ", ".join(category.name for category in session.query(model).options(joinedload(getattr(model, rel))).filter_by(id=getattr(row, 'id')).one_or_none().categories) + ")" for rel in rels]
             display_text = " | ".join(row_data)
             listbox.insert(tk.END, display_text)
             row_id_mapping[display_text] = row.id
 
     rows = session.query(model).all()
-    show_table_data(model, rows, listbox_data, session, model_columns)
+    show_table_data(model, rows, listbox_data, session, model_columns, model_rels)
 
     def delete_selected_record():
         selected_index = listbox_data.curselection()
