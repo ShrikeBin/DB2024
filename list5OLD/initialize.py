@@ -1,7 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 from tkcalendar import DateEntry,Calendar
-from sqlalchemy import create_engine
+from datetime import datetime, date
+from sqlalchemy import Date
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import IntegrityError
 from models import Base, User, Book, Author, Category, Borrowing, Rating, UserRole, BookCategory, Reader
@@ -201,6 +202,8 @@ def enter_table(table, root, current_user):
         if not record_id:
             messagebox.showwarning("Błąd", "Nie znaleziono ID rekordu.")
             return
+
+        record = session.get(model, int(record_id))
         
         edit_window = tk.Toplevel(table_window)
         edit_window.title(f"Edytuj dane z {table.capitalize()}")
@@ -215,15 +218,18 @@ def enter_table(table, root, current_user):
         for col in model_columns:
             tk.Label(frame_input, text=col.capitalize()).pack(anchor="w", padx=5)
             var = tk.StringVar()
+            var.set(getattr(record, col))
             entry_vars[col] = var
             tk.Entry(frame_input, textvariable=var).pack(anchor="w", padx=5, pady=2)
 
         def edit_data():
-            record = session.get(model, int(record_id))
             try:
                 for col, var in entry_vars.items():
-                    if var.get():
-                        setattr(record, col, var.get())
+                    if var.get() and var.get() != 'None':
+                        try:
+                            setattr(record, col, datetime.strptime(var.get(), '%d-%m-%Y').date())
+                        except:
+                            setattr(record, col, var.get())
                 
                 session.commit()
                 messagebox.showinfo("Sukces", "Dane zostały zedytowane.")
@@ -294,6 +300,9 @@ def open_main_app(current_user):
 
     button_categories = tk.Button(frame_main, text="Kategorie", command=lambda: enter_table("categories", root, current_user))
     button_categories.pack()
+
+    button_bookcategories = tk.Button(frame_main, text="Kategorie Ksiazek", command=lambda: enter_table("book_categories", root, current_user))
+    button_bookcategories.pack()
 
     button_readers = tk.Button(frame_main, text="Czytelnicy", command=lambda: enter_table("readers", root, current_user))
     button_readers.pack()

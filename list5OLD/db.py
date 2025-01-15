@@ -102,5 +102,18 @@ with engine.connect() as connection:
                 FROM borrowings 
                 WHERE book_id = OLD.id AND returned_at IS NULL
             );
+                            
+            UPDATE books
+            SET available_copies = available_copies - 1
+            WHERE title = (
+                SELECT title
+                FROM books
+                WHERE id = OLD.book_id
+            )
+            AND author_id = (
+                SELECT author_id
+                FROM books
+                WHERE id = OLD.book_id
+            );
         END;
     """))
