@@ -182,7 +182,13 @@ def enter_table(table, root, current_user):
         def add_data():
             data_to_add = {col: var.get() for col, var in entry_vars.items() if var.get()}
             try:
-                new_record = model(**data_to_add)
+                new_record = model()
+                for col, var in data_to_add.items():
+                    if var and var != 'None':
+                        try:
+                            setattr(new_record, col, datetime.strptime(var, '%d-%m-%Y').date())
+                        except:
+                            setattr(new_record, col, var)
                 session.add(new_record)
                 session.commit()
                 messagebox.showinfo("Sukces", "Dane zostały dodane.")
