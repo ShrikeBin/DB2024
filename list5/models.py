@@ -56,6 +56,8 @@ class Book(Base):
     isbn = Column(String, unique=True, nullable=True)
     available_copies = Column(Integer, nullable=False, default=1)
 
+    categories = relationship('Category', secondary='book_categories', back_populates='books')
+
     __initializable__ = ['title', 'author_id', 'published_date', 'isbn']
     __editable__ = __initializable__
 
@@ -80,6 +82,8 @@ class Category(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, nullable=False)
     description = Column(Text, nullable=True)
+
+    books = relationship('Book', secondary='book_categories', back_populates='categories')
 
     __initializable__ = ['name', 'description']
     __editable__ = __initializable__
