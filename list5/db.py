@@ -91,6 +91,25 @@ with engine.connect() as connection:
             );
         END;
     """))
+
+    connection.execute(text("""
+        CREATE TRIGGER IF NOT EXISTS nonborrowed_book_available
+        BEFORE DELETE ON borrowings
+        BEGIN
+            UPDATE books
+            SET available_copies = available_copies + 1
+            WHERE title = (
+                SELECT title
+                FROM books
+                WHERE id = OLD.book_id
+            )
+            AND author_id = (
+                SELECT author_id
+                FROM books
+                WHERE id = OLD.book_id
+            );
+        END;
+    """))
                             
     connection.execute(text("""
         CREATE TRIGGER IF NOT EXISTS prevent_borrowed_book_deletion
@@ -108,12 +127,12 @@ with engine.connect() as connection:
             WHERE title = (
                 SELECT title
                 FROM books
-                WHERE id = OLD.book_id
+                WHERE id = OLD.id
             )
             AND author_id = (
                 SELECT author_id
                 FROM books
-                WHERE id = OLD.book_id
+                WHERE id = OLD.id
             );
         END;
     """))

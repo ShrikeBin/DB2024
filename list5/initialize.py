@@ -142,6 +142,9 @@ def enter_table(table, root, current_user):
     show_table_data(model, rows, listbox_data, session, model_columns, model_rels)
 
     def delete_selected_record():
+        if model == Borrowing and current_user.role != ADMIN:
+            messagebox.showerror("Błąd","Cannot remove borrowings data")
+            return
         selected_index = listbox_data.curselection()
         if not selected_index:
             messagebox.showwarning("Błąd", "Nie wybrano rekordu do usunięcia.")
@@ -186,7 +189,7 @@ def enter_table(table, root, current_user):
                 for col, var in data_to_add.items():
                     if var and var != 'None':
                         try:
-                            setattr(new_record, col, datetime.strptime(var, '%d-%m-%Y').date())
+                            setattr(new_record, col, datetime.strptime(var, '%Y-%m-%d').date())
                         except:
                             setattr(new_record, col, var)
                 session.add(new_record)
@@ -239,7 +242,7 @@ def enter_table(table, root, current_user):
                 for col, var in entry_vars.items():
                     if var.get() and var.get() != 'None':
                         try:
-                            setattr(record, col, datetime.strptime(var.get(), '%d-%m-%Y').date())
+                            setattr(record, col, datetime.strptime(var.get(), '%Y-%m-%d').date())
                         except:
                             setattr(record, col, var.get())
                 
